@@ -219,8 +219,6 @@ class Unpacker:
             end, key = self.step(data, end)
             end, value = self.step(data, end)
 
-            print(f"map ({i + 1}/{size}) - key: {key}, value: {value}")
-
             ret_map[key] = value
 
         return end, ret_map
@@ -269,7 +267,6 @@ class Unpacker:
         if self.records is None:
             return pos, code
 
-        print(f"records: {self.records}")
         identifier1 = code & 0x3F
 
         # TODO: if data[pos + 1] != 0, it's an extended record?
@@ -283,8 +280,6 @@ class Unpacker:
         for i in range(size):
             pos, key = self.step(data, pos)
             pos, value = self.step(data, pos)
-
-            print(f"fixmap ({i + 1}/{size}) - key: {key}, value: {value}")
 
             ret_map[key] = value
 
