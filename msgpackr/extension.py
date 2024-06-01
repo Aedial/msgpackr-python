@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, List, Tuple, Union
 
-from src.constants import ARRAY, SKIP, STR, UINT32_STRUCT, UNDEFINED
+from msgpackr.constants import ARRAY, SKIP, STR, UINT32_STRUCT, UNDEFINED
 
 BytesLike = Union[bytes, bytearray, memoryview]
 

@@ -9,8 +9,8 @@ from functools import partial
 from logging import Logger
 from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
-from src.constants import *
-from src.extension import (
+from msgpackr.constants import *
+from msgpackr.extension import (
     BundledStrings,
     BundledStringsExtension,
     MsgpackExtension,
@@ -100,7 +100,7 @@ def attach_logger(
 
 
 # noinspection PyMethodMayBeStatic
-@attach_logger(log_pos=True, log_func=True, log_ext=True, log_bundle=True, log_return=True)
+# @attach_logger(log_pos=True, log_func=True, log_ext=True, log_bundle=True, log_return=True)
 class Unpacker:
     #: The registered extensions.
     extensions: Dict[int, Type[MsgpackExtension]]
