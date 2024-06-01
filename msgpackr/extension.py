@@ -275,13 +275,11 @@ class RecordExtension(MsgpackExtensionWithPost):
         identifier1 &= 0x3F
 
         if length == 1:
-            print("RecordExtension", identifier1)
             return identifier1
 
         if length == 2:
             identifier2 = data[pos + 1]
             # TODO: do we need to check the range?
-            print("RecordExtension", identifier1, identifier2, identifier2 << 5 + identifier1)
 
             return identifier2 << 5 + identifier1
 
