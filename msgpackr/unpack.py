@@ -304,7 +304,7 @@ class Unpacker:
 
         return end, data[pos:end].decode()
 
-    def negative_fixint(self, code: int, _data: BytesLike, pos: int) -> tuple[int, int]:
+    def negative_fixint(self, code: int, _data: BytesLike, pos: int) -> Tuple[int, int]:
         return pos, code - 0x100
 
     CODES_RANGES: Dict[int, Callable[["Unpacker", int, BytesLike, int], Tuple[int, Any]]] = {
