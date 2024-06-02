@@ -6,7 +6,6 @@ Thanks to JasonLWalker for helping to spot the non-standard additions to the Mes
 
 
 from functools import partial
-from logging import Logger
 from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 from msgpackr.constants import *
@@ -24,83 +23,7 @@ from msgpackr.extension import (
 BytesLike = Union[bytes, bytearray, memoryview]
 
 
-def attach_logger(
-    cls=None,
-    logger: Union[Logger, None] = None,
-    log_pos: bool = False,
-    log_func: bool = False,
-    log_ext: bool = False,
-    log_bundle: bool = False,
-    log_return: bool = False,
-):
-    """
-    Attach a logger to the unpacker.
-
-    :param cls: The class to attach the logger to.
-    :param logger: The logger to attach. If None, the logger will print to stdout.
-    :param log_pos: Whether to log the position.
-    :param log_func: Whether to log the function.
-    :param log_ext: Whether to log the extension type.
-    :param log_bundle: Whether to log the bundled strings.
-    :param log_return: Whether to log the return value.
-    """
-
-    def inner(inner_cls):
-        def print_log(msg):
-            if logger is None:
-                print(msg)
-            else:
-                logger.info(msg)
-
-        def get_code_name(code: int) -> str:
-            if code in inner_cls.CODES_FIXED:
-                return inner_cls.CODES_FIXED[code].func.__name__ + f" (0x{code:02x})"
-
-            for (low, high), func in inner_cls.CODES_RANGES.items():
-                if low <= code <= high:
-                    return func.__name__ + f" (0x{code:02x})"
-
-            return f"<{code:02x}>"
-
-        step_func = inner_cls.step
-
-        def step_wrapper(self, data, pos, *args, **kwargs):
-            code = UINT8_STRUCT.unpack_from(data, pos)[0]
-
-            msg = ""
-            if log_pos:
-                msg = f"{hex(pos)}: "
-
-            if log_func:
-                msg += f"{get_code_name(code)}"
-
-            if log_ext:
-                if code in (FIXEXT1, FIXEXT2, FIXEXT4, FIXEXT8, FIXEXT16, EXT8, EXT16, EXT32):
-                    ext_type = data[pos + 1]
-                    msg += (" | " if msg else "") + f"Ext{ext_type}"
-
-            if log_bundle:
-                msg += (" | " if msg else "") + f"Bundle: {self.bundle}"
-
-            if msg:
-                print_log(msg)
-
-            i, ret = step_func(self, data, pos, *args, **kwargs)
-
-            if log_return:
-                print_log(f"    -> {ret}")
-
-            return i, ret
-
-        inner_cls.step = step_wrapper
-
-        return inner_cls
-
-    return inner if cls is None else inner(cls)
-
-
 # noinspection PyMethodMayBeStatic
-# @attach_logger(log_pos=True, log_func=True, log_ext=True, log_bundle=True, log_return=True)
 class Unpacker:
     #: The registered extensions.
     extensions: Dict[int, Type[MsgpackExtension]]
@@ -126,7 +49,7 @@ class Unpacker:
             raise ValueError(f"Data is too short: {len(data)} bytes, expected at least {length} bytes")
 
     # Fixed code points
-    def bundled_string(self, data: BytesLike, pos: int):
+    def bundled_string(self, data: BytesLike, pos: int) -> Tuple[int, str]:
         if self.bundle is None:
             raise ValueError("No bundled strings provided")
 
@@ -135,14 +58,14 @@ class Unpacker:
 
         return pos, ret
 
-    def bin(self, data: BytesLike, pos: int, st: Struct, offset: int):
+    def bin(self, data: BytesLike, pos: int, st: Struct, offset: int) -> Tuple[int, BytesLike]:
         begin = pos + offset
         self.check_data_length(begin, data)
         end = begin + st.unpack_from(data, pos)[0]  # pos + offset + size
 
         return end, data[begin:end]
 
-    def ext(self, data: BytesLike, pos: int, st: Struct, offset: int):
+    def ext(self, data: BytesLike, pos: int, st: Struct, offset: int) -> Tuple[int, Any]:
         begin = pos + offset
         self.check_data_length(begin, data)
         size = st.unpack_from(data, pos)[0]
@@ -159,19 +82,19 @@ class Unpacker:
 
         return end, ret
 
-    def float(self, data: BytesLike, pos: int, st: Struct, size: int):
+    def float(self, data: BytesLike, pos: int, st: Struct, size: int) -> Tuple[int, float]:
         end = pos + size
         self.check_data_length(end, data)
 
         return end, st.unpack_from(data, pos)[0]
 
-    def int(self, data: BytesLike, pos: int, st: Struct, size: int):
+    def int(self, data: BytesLike, pos: int, st: Struct, size: int) -> Tuple[int, int]:
         end = pos + size
         self.check_data_length(end, data)
 
         return end, st.unpack_from(data, pos)[0]
 
-    def fixext(self, data: BytesLike, pos: int, size: int):
+    def fixext(self, data: BytesLike, pos: int, size: int) -> Tuple[int, Any]:
         begin = pos + 1
         end = begin + size
         self.check_data_length(end, data)
@@ -186,7 +109,7 @@ class Unpacker:
 
         return end, ret
 
-    def str(self, data: BytesLike, pos: int, st: Struct, offset: int):
+    def str(self, data: BytesLike, pos: int, st: Struct, offset: int) -> Tuple[int, str]:
         self.check_data_length(pos + offset, data)
         size = st.unpack_from(data, pos)[0]
         pos += offset
@@ -198,7 +121,7 @@ class Unpacker:
 
         return end, data[offset:end].decode()
 
-    def array(self, data: BytesLike, pos: int, st: Struct, offset: int):
+    def array(self, data: BytesLike, pos: int, st: Struct, offset: int) -> Tuple[int, list]:
         end = pos + offset
         self.check_data_length(end, data)
         size = st.unpack_from(data, pos)[0]
@@ -209,7 +132,7 @@ class Unpacker:
 
         return end, arr
 
-    def map(self, data: BytesLike, pos: int, st: Struct, offset: int):
+    def map(self, data: BytesLike, pos: int, st: Struct, offset: int) -> Tuple[int, dict]:
         end = pos + offset
         self.check_data_length(end, data)
         size = st.unpack_from(data, pos)[0]
@@ -225,9 +148,9 @@ class Unpacker:
 
     CODES_FIXED: Dict[int, Callable[["Unpacker", BytesLike, int], Tuple[int, Any]]] = {
         # BUNDLED_STRINGS is handled separately
-        NIL: lambda *args, **kwargs: (0, None),
-        FALSE: lambda *args, **kwargs: (0, False),
-        TRUE: lambda *args, **kwargs: (0, True),
+        NIL: lambda self, data, pos: (pos, None),
+        FALSE: lambda self, data, pos: (pos, False),
+        TRUE: lambda self, data, pos: (pos, True),
         BIN8: partial(bin, st=UINT8_STRUCT, offset=UINT8_STRUCT.size),
         BIN16: partial(bin, st=UINT16_STRUCT, offset=UINT16_STRUCT.size),
         BIN32: partial(bin, st=UINT32_STRUCT, offset=UINT32_STRUCT.size),
@@ -263,9 +186,9 @@ class Unpacker:
         return pos, code
 
     def record(self, code: int, data: BytesLike, pos: int) -> Tuple[int, Union[int, dict]]:
-        # if records are disabled, it's just a positive fixint
-        if self.records is None:
-            return pos, code
+        # if records are not used, it's just a positive fixint
+        if not self.records:
+            return self.positive_fixint(code, data, pos)
 
         identifier1 = code & 0x3F
 
@@ -273,7 +196,7 @@ class Unpacker:
 
         return RecordExtension.post_unpack(self, data, pos, identifier1)
 
-    def fixmap(self, code: int, data: BytesLike, pos: int):
+    def fixmap(self, code: int, data: BytesLike, pos: int) -> Tuple[int, dict]:
         size = code & 0x0F
 
         ret_map = {}
@@ -285,7 +208,7 @@ class Unpacker:
 
         return pos, ret_map
 
-    def fixarray(self, code: int, data: BytesLike, pos: int):
+    def fixarray(self, code: int, data: BytesLike, pos: int) -> Tuple[int, list]:
         size = code & 0x0F
 
         arr = [None] * size
@@ -294,7 +217,7 @@ class Unpacker:
 
         return pos, arr
 
-    def fixstr(self, code: int, data: BytesLike, pos: int):
+    def fixstr(self, code: int, data: BytesLike, pos: int) -> Tuple[int, str]:
         size = code & 0x1F
         end = pos + size
 
