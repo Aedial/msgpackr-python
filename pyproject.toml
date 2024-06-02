@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "msgpackr-python"
-version = "0.1.5"
+version = "0.1.6"
 description = "Re-implementation of kriszyp's msgpackr Javascript module"
 license = "MIT"
 authors = ["Aedial <aedial.dev@gmail.com>"]
