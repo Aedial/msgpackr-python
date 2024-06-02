@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "msgpackr-python"
-version = "0.1.4"
+version = "0.1.5"
 description = "Re-implementation of kriszyp's msgpackr Javascript module"
 license = "MIT"
 authors = ["Aedial <aedial.dev@gmail.com>"]
@@ -25,7 +25,7 @@ python = "^3.7.10"
 pre-commit = "^2.21.0"
 pylint = "^2.15.5"
 pytest = "^7.3.1"
-poetry = "=1.5.1"
+poetry = "=1.5.1"  # last 3.7 compatible version
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^5.3.0"
@@ -84,3 +84,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 test = "poetry_scripts:test"
+build-docs = "poetry_scripts:build_docs"
+bump-version = "poetry_scripts:bump_version"
